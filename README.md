@@ -4,6 +4,7 @@
 Project members : 
 
 - BAGORIS Emeline
+- BEAUFILS Vincent
 - BOERSMA Hélène
 
 
