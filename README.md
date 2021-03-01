@@ -7,10 +7,9 @@ Project members :
 - BEAUFILS Vincent
 - BOERSMA Hélène
 
-<<<<<<< Updated upstream
+
 ![](images/architecture_peaceland.PNG)
 =======
->>>>>>> Stashed changes
 
 Preliminary questions :
 
