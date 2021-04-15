@@ -1,6 +1,4 @@
 Test/null/
 Test/null
-Peaceland_BAGORIS_BEAUFILS_BOERSMA/null
-Peaceland_BAGORIS_BEAUFILS_BOERSMA/null/
-Peaceland_BAGORIS_BEAUFILS_BOERSMA/target
-Peaceland_BAGORIS_BEAUFILS_BOERSMA/target/
+Test/target
+Test/target/
