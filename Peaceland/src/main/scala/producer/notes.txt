@@ -1,0 +1,26 @@
+  /**
+  import akka.actor.{Actor, ActorSystem, Props}
+  import akka.actor.TypedActor.dispatcher
+
+  // generate random data and sends message every minute
+  def sendReport(): Unit = {
+    println(s"Random number is ${rand.nextInt(100)}")
+    val system = ActorSystem("HelloSystem")
+    import system.dispatcher
+    system.scheduler.scheduleOnce(5000 milliseconds) {
+      println("J'aime")
+    }
+    println(s"Drone produced a record: $recordMetaData")
+  }**/
+
+
+  val record = new ProducerRecord[String, String]("drone_topic",
+        play.api.libs.json.Json.obj(
+          "drone_id" -> msg.drone_id,
+          "plate_id" -> msg.plate_id,
+          "address" -> msg.address,
+          "time" -> msg.time,
+          "violation_code" -> msg.violation_code
+        ).toString)
+
+    consumer.subscribe(util.Collections.singletonList(topic))
