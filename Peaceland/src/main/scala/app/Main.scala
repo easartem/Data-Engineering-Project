@@ -8,7 +8,6 @@ object Main {
     Logger.getLogger("org").setLevel(Level.OFF)
     println("Hello, world")
     val blop = new Drone(1)
-    blop.generateReport().foreach(println)
-    blop.sendReport(10)
+    blop.simulateDrone(10)
   }
 }

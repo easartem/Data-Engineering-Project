@@ -1,16 +1,14 @@
 package utils
 
 import com.google.gson.Gson
+import EventUtils.Event
 
 object ReportUtils {
 
   case class Report(
                      id: Int,
-                     first_name: String,
-                     last_name: String,
-                     latitude: String,
-                     longitude: String,
-                     words: String
+                     events: List[Event]
+                     //words: String
                    )
 
   def parseFromJson(lines: Iterator[String]): Iterator[Report] = {
