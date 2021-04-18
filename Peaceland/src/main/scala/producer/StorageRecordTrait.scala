@@ -1,0 +1,5 @@
+package producer
+
+trait StorageRecordTrait {
+
+}

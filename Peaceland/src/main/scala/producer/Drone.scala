@@ -4,11 +4,6 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 import utils.EventUtils
 import utils.EventUtils.Event
-import scala.concurrent.duration._
-import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}
-import org.apache.kafka.common.serialization.StringSerializer
-import java.util.Properties
-
 
 //rdd.collect().foreach(println)
 /** Each drone generate a report every minute ! We have to :
@@ -16,7 +11,8 @@ import java.util.Properties
  *    - instanciate kafka producer stream
  *    - send message containing the report each minute */
 
-class Drone(val id: Int){
+
+class Drone(val id: Int) extends AlertRecordTrait {
 
   /** --------------------ATTRIBUTES-------------------- **/
   val rand = scala.util.Random
@@ -24,6 +20,7 @@ class Drone(val id: Int){
 
 
   /** --------------------METHODS----------------------- **/
+
 
   /** Status : ok */
   //Load the data from the json file and return an RDD of Report
@@ -37,6 +34,7 @@ class Drone(val id: Int){
       .mapPartitions(EventUtils.parseFromJson)
   }
 
+
   /** Status : ok */
   //Select random line from the json through RDD
   def generateEvent() : RDD[Event] = {
@@ -46,57 +44,80 @@ class Drone(val id: Int){
     // But we need to watch for Exception Caused by: java.lang.UnsupportedOperationException: empty collection
   }
 
-  /** Status : TO MODIFY */
-  def handleEvent(peacescore: Int): Unit = peacescore match {
-    case peacescore if (peacescore >= 50 && peacescore <= 100) => println(s"Citizen ok with score ${peacescore}") // DO NOTHING
-    case peacescore if (peacescore >= 0 && peacescore < 50) => println(s"ALERT : Citizen instable with score ${peacescore}") // PRODUCE ALERT WITH KAFKA
+
+  /** Status : TO MODIFY (Add alertProducer & send alertProducer) */
+  def handleEvent(rdd: Event): Unit = rdd.score match {
+    // Good citizen, DO NOTHING
+    case rdd.score if (rdd.score >= 50 && rdd.score <= 100) => {
+      println(s"Citizen ok with score ${rdd.score}")
+    }
+    // Bad citizen, PRODUCE ALERT WITH KAFKA
+    case rdd.score if (rdd.score >= 0 && rdd.score < 50) => {
+      println(s"ALERT : Citizen instable with score ${rdd.score}")
+      sendAlertRecord(rdd)
+    }
+    // Wrong argument
     case _ => println("Error")  }
 
-  /** Status : TO DO */
-  //Return 1 min of report containing a List of events, droneID and surrounding conversations
-  def generateReport(): Unit = {
-    print("To modify")
-  }
 
-  /** Status : in testing */
-  def simulateDrone(iter: Int): Unit = {
-    println("Begin drone simulation...")
-    val deadline = iter.seconds.fromNow
-    while (deadline.hasTimeLeft)
-    {
-      val rdd = generateEvent()
-      generateEvent()
-      handleEvent(rdd.first().score)
-      // Need to generate a report containing all the events of the last minute
-      // But can't add event to list as it is an immutable data structure, like a Java String
-      // Then produce a record containing the report
-      // Every minute, sends the record with kafka producer
-      Thread.sleep(2000)
+  /** Status : TO DO */
+  def sendEvent(event : Event, makeReport : Boolean): Unit = (
+    // We need to send a boolean to the topic in order to indicate the last event of a report
+    println("Send EventRecord with EventProducer")
+  )
+
+
+  /** Status : TO MODIFY */
+  def simulateDrone(i:Int) : Unit = i match {
+    // Start of the drone simulation
+    case 1 => {
+      println("Begin drone simulation...")
+      println("")
+      println(s"New Event, ${i}")
+      val rdd = generateEvent().first()
+      handleEvent(rdd)
+      sendEvent(rdd,false)
+      Thread.sleep(1000)
+      simulateDrone(i+1)
+    }
+    // End of the drone simulation
+    case 40 => {
+      println("Generate Report, reset i to 0")
+      println("This is the END")
+    }
+    // 1 minute of events was generated so we pass our intention to generate a report to the eventConsumer
+    case i if (i%20 == 0) => {
+      println("")
+      val rdd = generateEvent().first()
+      handleEvent(rdd)
+      sendEvent(rdd,true)
+      println(s"New Event, ${i}")
+      println("Generate Report")
+      Thread.sleep(1000)
+      simulateDrone(i+1)
+    }
+    // Generate event every 3 seconds
+    case _ => {
+      println("")
+      println(s"New Event, ${i}")
+      val rdd = generateEvent().first()
+      handleEvent(rdd)
+      sendEvent(rdd,false)
+      Thread.sleep(1000)
+      simulateDrone(i+1)
     }
   }
-
-  /** --------------------KAFKA WARZONE----------------- **/
-  /**
-
-  // Kafka is correctly linked to the project
-  // The simple example below works correctly
-
-  // KAFKA PRODUCER CONFIG
-  val props: Properties = new Properties()
-  props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092")
-  props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, classOf[StringSerializer])
-  props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, classOf[StringSerializer])
-  // KAFKA PRODUCER FOR TESTING DEPENDENCIES
-  val producer: KafkaProducer[String, String] = new KafkaProducer[String, String](props)
-  // TEST
-  def writeToKafka(topic: String): Unit = {
-    val record = new ProducerRecord[String, String](topic, "key", "value")
-    producer.send(record)
-    println("Drone produced a record: (key,value")
-  }
-
-  // For our project, we need 2 producers alert and storage with different config and custom serializer or json serializer
-  // producerAlertInstance = new KafkaProducer[Integer, AlertData](props)
-  // producerStorageInstance = new KafkaProducer[Integer, Report](props)
-   */
 }
+
+/**
+ *                      _-AlertProducer ----> AlertConsumer
+ * handleEvent :  Event
+ *                      -_EventProducer ----> EventConsumer
+ *                                              if (makeReport == True)
+ *                                                  Make Report (??)
+ *                                                  ReportProducer ------> ReportConsumer
+ *                                              else
+ *                                                  store event (??)
+ *
+ *     EventProducer needs recordEvent with boolean value True or False for report stop condition
+ */
