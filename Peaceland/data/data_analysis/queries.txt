@@ -45,3 +45,6 @@ db.getCollection('random_report').find(
     })
 
 
+// Compute total number of peacescore and the peacescore average
+db.random_report.aggregate( [ { $group : {"_id" : null, "number_of_score" : {$sum : 1}, "score_average" : {$avg : "$score"} } } ] );
+
