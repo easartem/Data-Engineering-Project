@@ -36,7 +36,4 @@ object DatabaseConnector {
     df.show()
   }
 
-
-
-
 }
