@@ -1,7 +1,7 @@
 package producer
 
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}
-import org.apache.kafka.common.serialization.StringSerializer
+import org.apache.kafka.common.serialization.{IntegerSerializer, StringSerializer}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 import producer.`trait`.AlertRecordTrait
@@ -26,23 +26,52 @@ class Drone(val id: Int)  {
   /** --------------------Kafka Alert Producer-------------------- **/
 
   // KAFKA PRODUCER CONFIG
-  val props: Properties = new Properties()
-  props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092")
-  props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, classOf[StringSerializer])
-  props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, classOf[StringSerializer])
+  val propsAlert: Properties = new Properties()
+  propsAlert.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092")
+  propsAlert.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, classOf[StringSerializer])
+  propsAlert.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, classOf[StringSerializer])
 
   // KAFKA PRODUCER INSTANCE
-  val producerAlert: KafkaProducer[String, String] = new KafkaProducer[String, String](props)
+  val producerAlert: KafkaProducer[String, String] = new KafkaProducer[String, String](propsAlert)
 
   // KAFKA PRODUCER METHOD (produce record and send it to topic)
-  def writeToKafka(topic: String, name : String, location : String): Unit = {
-    val record = new ProducerRecord[String, String](topic, name, location)
-    println(" checkpoint")
-    producerAlert.send(record)
+  def sendAlert(topic: String, name : String, location : String): Unit = {
+    val recordAlert = new ProducerRecord[String, String](topic, name, location)
+    producerAlert.send(recordAlert)
     println(s"[$topic] Drone sent alert for #${name} to location ${location}")
   }
 
-  /** --------------------METHODS--------------------------------- **/
+  /** --------------------Kafka Event Producer-------------------- **/
+
+  // DATA : Drone ID + First_name + Last_name + score + lat + long + words(ideally)
+  // (Key : Drone ID, myEvent (Event))
+  // for the sake of testing, we will do : (Key : Drone ID (Int), Value : first_name (String))
+
+  // KAFKA PRODUCER CONFIG
+  val propsEvent: Properties = new Properties()
+  propsEvent.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092")
+  propsEvent.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, classOf[IntegerSerializer])
+  propsEvent.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, classOf[StringSerializer])
+
+  // KAFKA PRODUCER INSTANCE
+  val producerEvent: KafkaProducer[Int, String] = new KafkaProducer[Int, String](propsEvent)
+
+  // KAFKA PRODUCER METHOD (produce record and send it to topic)
+  def sendEvent2(topic : String, myEvent: Event): Unit = {
+    val recordEvent = new ProducerRecord[Int, String](topic, id, myEvent.last_name)
+    producerEvent.send(recordEvent)
+    println(s"[$topic] Drone ${id} sent event ${myEvent.last_name}")
+  }
+
+  // Drone ID + First_name + Last_name + score + lat + long + words(ideally)
+  //
+  /** Status : TO DO */
+  def sendEvent(event : Event, makeReport : Boolean): Unit = (
+    // We need to send a boolean to the topic in order to indicate the last event of a report
+    println("Send EventRecord with EventProducer")
+    )
+
+  /** --------------------METHODS------------------------------------------------------------------------------------------------------------------------------------------------- **/
 
 
   /** Status : ok */
@@ -78,17 +107,12 @@ class Drone(val id: Int)  {
       println(s"ALERT : Citizen instable with score ${rdd.score}")
       val name = rdd.first_name + " " + rdd.last_name
       val location = "(" + rdd.lat.toString + "," + rdd.long.toString + ")"
-      writeToKafka("Peaceland-ALERT", name, location)
+      sendAlert("Peaceland-ALERT", name, location)
     }
     // Wrong argument
     case _ => println("Error")  }
 
 
-  /** Status : TO DO */
-  def sendEvent(event : Event, makeReport : Boolean): Unit = (
-    // We need to send a boolean to the topic in order to indicate the last event of a report
-    println("Send EventRecord with EventProducer")
-  )
 
   /** Status : ok */
   //Event lifecycle (create an event, handle the event peacescore, record the event)
@@ -96,7 +120,8 @@ class Drone(val id: Int)  {
     println(s"\nNew Event, ${i}")
     val rdd = generateEvent().first()
     handleEvent(rdd)
-    sendEvent(rdd,reportStatus)
+    //sendEvent(rdd,reportStatus)
+    sendEvent2("Peaceland-STORAGE", rdd)
     Thread.sleep(1000)
   }
 
