@@ -6,7 +6,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 import producer.`trait`.AlertRecordTrait
 import utils.EventUtils
-import utils.EventUtils.Event
+import utils.EventUtils.{Event, writeEvent}
 
 import java.util.Properties
 
@@ -58,7 +58,7 @@ class Drone(val id: Int)  {
 
   // KAFKA PRODUCER METHOD (produce record and send it to topic)
   def sendEvent2(topic : String, myEvent: Event): Unit = {
-    val recordEvent = new ProducerRecord[Int, String](topic, id, myEvent.last_name)
+    val recordEvent = new ProducerRecord[Int, String](topic, id, writeEvent(myEvent))
     producerEvent.send(recordEvent)
     println(s"[$topic] Drone ${id} sent event ${myEvent.last_name}")
   }

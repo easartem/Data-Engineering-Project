@@ -22,6 +22,17 @@ object EventUtils {
     val gson = new Gson
     lines.map(line => gson.fromJson(line, classOf[Event]))
   }
+
+  def writeEvent(event : Event) = {
+    val gson = new Gson
+    gson.toJson(event)
+  }
+
+  def readEvent(event: String) = {
+    val gson = new Gson
+    gson.fromJson(event, classOf[Event])
+  }
+
 }
 
 
