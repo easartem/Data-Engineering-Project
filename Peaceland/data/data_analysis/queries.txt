@@ -33,5 +33,15 @@ db.getCollection('random_report').find(
     })
 
 
-// Find all reports of a given score
+// Find all reports in an interval of peacescore
+varScoreMax = 20; // Peacescore maximum
+varScoreMin = 0; // Peacescore minimum
+
+db.getCollection('random_report').find(
+    {"score":{
+         $lt:varScoreMax,
+         $gte:varScoreMin
+     },
+    })
+
 
