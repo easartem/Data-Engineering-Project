@@ -1,0 +1,25 @@
+/* MongoDB queries for data analysis */
+
+
+// Find reports around a location
+varLat = 0; // Location latitude
+varLong = 0; // Location longitude
+varPrecision = 10; // Degree of precision
+
+varLatMax = varLat + varPrecision;
+varLatMin = varLat - varPrecision;
+varLongMax = varLong + varPrecision;
+varLongMin = varLong - varPrecision;
+
+db.getCollection('random_report').find(
+    {"lat":{
+         $lt:varLatMax,
+         $gte:varLatMin
+     },
+     "long":{
+         $lt:varLongMax,
+         $gte:varLongMin
+     }
+    })
+
+
