@@ -23,3 +23,15 @@ db.getCollection('random_report').find(
     })
 
 
+// Find someone reports
+varFrstName = "Richard"; // People first name
+varLastName = "Boocock"; // People last name
+
+db.getCollection('random_report').find(
+     { "first_name" : varFrstName,
+      "last_name" : varLastName
+    })
+
+
+// Find all reports of a given score
+
