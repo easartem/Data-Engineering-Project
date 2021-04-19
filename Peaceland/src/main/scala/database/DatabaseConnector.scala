@@ -12,8 +12,8 @@ object DatabaseConnector {
   val spark = SparkSession.builder()
     .master("local")
     .appName("MongoSparkConnectorIntro")
-    .config("spark.mongodb.input.uri", "mongodb://127.0.0.1/test.myCollection")
-    .config("spark.mongodb.output.uri", "mongodb://127.0.0.1/test.myCollection")
+    .config("spark.mongodb.input.uri", "mongodb+srv://admin:admin@peaceland.ps95v.mongodb.net/data_peaceland?retryWrites=true&w=majority")
+    .config("spark.mongodb.output.uri", "mongodb+srv://admin:admin@peaceland.ps95v.mongodb.net/data_peaceland?retryWrites=true&w=majority")
     .getOrCreate()
 
   def writeMessage(db : String, topic : String, data : Array[(String, String)]): Unit ={
