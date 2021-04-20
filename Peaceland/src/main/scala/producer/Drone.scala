@@ -6,7 +6,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 import producer.`trait`.AlertRecordTrait
 import utils.EventUtils
-import utils.EventUtils.{Event, writeEvent}
+import utils.EventUtils.{Event, writeEvent, writeEventForStorage}
 
 import java.util.Properties
 
@@ -22,6 +22,7 @@ class Drone(val id: Int)  {
   /** --------------------ATTRIBUTES------------------------------ **/
   val rand = scala.util.Random
   val pathToFile = "data/random_event.json"
+
 
   /** --------------------Kafka Alert Producer-------------------- **/
 
@@ -45,26 +46,24 @@ class Drone(val id: Int)  {
 
   // DATA : Drone ID + First_name + Last_name + score + lat + long + words(ideally)
   // (Key : Drone ID, myEvent (Event))
-  // for the sake of testing, we will do : (Key : Drone ID (Int), Value : first_name (String))
 
   // KAFKA PRODUCER CONFIG
   val propsEvent: Properties = new Properties()
   propsEvent.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092")
-  propsEvent.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, classOf[IntegerSerializer])
+  propsEvent.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, classOf[StringSerializer])
   propsEvent.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, classOf[StringSerializer])
 
   // KAFKA PRODUCER INSTANCE
-  val producerEvent: KafkaProducer[Int, String] = new KafkaProducer[Int, String](propsEvent)
+  val producerEvent: KafkaProducer[String, String] = new KafkaProducer[String, String](propsEvent)
 
   // KAFKA PRODUCER METHOD (produce record and send it to topic)
   def sendEvent2(topic : String, myEvent: Event): Unit = {
-    val recordEvent = new ProducerRecord[Int, String](topic, id, writeEvent(myEvent))
+    val idForStorage = "{\"id\": \"" + id + "\"}"
+    val recordEvent = new ProducerRecord[String, String](topic, idForStorage, writeEventForStorage(myEvent))
     producerEvent.send(recordEvent)
     println(s"[$topic] Drone ${id} sent event ${myEvent.last_name}")
   }
 
-  // Drone ID + First_name + Last_name + score + lat + long + words(ideally)
-  //
   /** Status : TO DO */
   def sendEvent(event : Event, makeReport : Boolean): Unit = (
     // We need to send a boolean to the topic in order to indicate the last event of a report
