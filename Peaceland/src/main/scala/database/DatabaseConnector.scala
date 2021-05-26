@@ -1,39 +1,50 @@
 package database
 
-import com.mongodb.spark.MongoSpark
 import org.apache.spark.sql.SparkSession
-import com.mongodb.spark.config.ReadConfig
-import com.mongodb.spark.sql.toMongoDataFrameReaderFunctions
-import org.bson.Document
+import com.mongodb.spark._
+import org.apache.log4j.{Level, Logger}
+import org.apache.spark.sql.functions._
 
-object DatabaseConnector {
+object DatabaseConnector extends App{
+
+  Logger.getLogger("org").setLevel(Level.OFF) // vire les logs
 
   /** MongoDB Connection */
   val spark = SparkSession.builder()
     .master("local")
     .appName("MongoSparkConnectorIntro")
-    .config("spark.mongodb.input.uri", "mongodb+srv://admin:admin@peaceland.ps95v.mongodb.net/data_peaceland?retryWrites=true&w=majority")
-    .config("spark.mongodb.output.uri", "mongodb+srv://admin:admin@peaceland.ps95v.mongodb.net/data_peaceland?retryWrites=true&w=majority")
+    .config("spark.mongodb.input.uri", "mongodb+srv://admin:admin@peaceland.ps95v.mongodb.net/")
+    .config("spark.mongodb.input.database", "data_peaceland")
+    .config("spark.mongodb.input.collection", "report")
     .getOrCreate()
 
-  def writeMessage(db : String, topic : String, data : Array[(String, String)]): Unit ={
+  val sc = spark.sparkContext
+  val df = MongoSpark.load(spark)
+  //val rdd = MongoSpark.load(sc)
 
-  //  val documents = sc.parallelize((1 to 10).map(i => Document.parse(s"{test: $i}")))
-   // MongoSpark.save(documents)
+  // Print the number of report in the Database
+  println("The number of drone's report : " + df.count())
 
-    val col = List("key", "value")
-    val df = spark.createDataFrame(data).toDF(col:_*)
-    df.write.format("mongo").mode("append").save()
-    spark.close()
+  // Print the average peacescore
+  println("The average peacescore is : ")
+  df.select(mean(df("score")))
+    .show()
 
-  }
+  // Print the name of people with score higher than 80
+  df.select(df("first_name"), df("last_name"), df("score"))
+    .filter(df("score")>80)
+    .show()
 
-  def readMessage(db : String, topic : String) : Unit = {
-    // Read the data from MongoDB to a DataFrame
-    val readConfig = ReadConfig(Map("uri" -> "mongodb://127.0.0.1/", "database" -> "test", "collection" -> "zips")) // 1)
-    val df = spark.read.mongo(readConfig)
-    df.printSchema()
-    df.show()
-  }
+  // Print the worst citizens >:(
+  println("This citizens have to go to peacecamp : ")
+  df.select(df("first_name"), df("last_name"), df("score"))
+    .orderBy(asc("score"))
+    .show(5)
 
+  // Find reports around a location
+  df.select(df("last_name"), df("first_name"), df("score"), df("lat"), df("long"))
+    .filter((df("lat") > -20.0000) && (df("lat") < 20.0000) && (df("long") > 100.0000) && (df("long") < 120.0000))
+    .show()
+
+  //println(rdd.first.toJson)
 }
